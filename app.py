@@ -6,7 +6,7 @@ import os
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 
 app = Flask(__name__)
 
@@ -59,7 +59,8 @@ def stations():
 def tobs():
 
     session = Session(engine)
-    results = session.query(meas.date,meas.tobs).filter(meas.date>="2016-08-23",meas.station=="USC00519281").all()
+    results = session.query(meas.date,meas.tobs).filter(meas.date>="2016-08-23",\
+        meas.station=="USC00519281").all()
     session.close()
 
     tobsDict={}
@@ -68,6 +69,27 @@ def tobs():
 
     return jsonify(tobsDict)
 
+@app.route("/api/v1.0/<start>")
+def start(start):
+
+    session = Session(engine)
+    results = session.query(func.min(meas.tobs), func.avg(meas.tobs),\
+        func.max(meas.tobs)).filter(meas.date >= start).all()
+    session.close()
+
+    return jsonify(results[0])
+
+
+@app.route("/api/v1.0/<start>/<end>")
+def startEnd(start,end):
+
+    session = Session(engine)
+    results = session.query(func.min(meas.tobs), func.avg(meas.tobs),\
+        func.max(meas.tobs)).filter(meas.date >= start).\
+        filter(meas.date <= end).all()
+    session.close()
+
+    return jsonify(results[0])
 
 
 if __name__ == "__main__":
